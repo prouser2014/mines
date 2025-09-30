@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <!-- Фиксированная ширина холста для рабочего интерфейса -->
+  <meta name="viewport" content="width=1280" />
+  <title>Управление</title>
+
+  <!-- Стили -->
+  <link rel="stylesheet" href="libs/Leaflet/leaflet.css" />
+  <link rel="stylesheet" href="style.css?v=10" />
+
+  <!-- Глобальные зависимости -->
+  <script src="single-instance.js"></script>
+  <script src="libs/jszip.min.js"></script>
+</head>
+<body>
+  <noscript>Для работы приложения требуется JavaScript.</noscript>
+
+  <div id="container">
+    <!-- Боковая панель -->
+    <div id="sidebar">
+      <img src="logo.png" alt="Логотип" class="sidebar-logo" />
+
+      <button id="deviceSettingsBtn" class="button device-settings">Настройки устройства</button>
+
+      <button id="nodeSettingsBtn" class="button full-width justify-start">
+        <img src="icons/radio-main.svg" alt="" class="icon" aria-hidden="true">
+        <span>Список узлов</span>
+      </button>
+
+      <button id="minesSettingsBtn" class="button full-width justify-start">
+        <img src="icons/mines-main.svg" alt="" class="icon" aria-hidden="true">
+        <span>Список мин</span>
+      </button>
+
+      <button id="sensorsListBtn" class="button full-width justify-start" hidden>
+        <img src="icons/list.svg" alt="" class="icon" aria-hidden="true">
+        <span>Список датчиков</span>
+      </button>
+
+      <button id="mapSettingsBtn" class="button full-width justify-start">
+        <img src="icons/settings.svg" alt="" class="icon" aria-hidden="true">
+        <span>Настройки</span>
+      </button>
+    </div>
+
+    <!-- Карта -->
+    <div id="map">
+      <svg id="nodesLayer"></svg>
+      <div id="cornerMenu"></div>
+      <div id="mapScale"></div>
+
+      <!-- Выезжающая панель быстрого доступа -->
+      <div id="slideOutContainer" aria-live="polite">
+        <button id="slideOutToggle" title="Открыть панель" aria-controls="slideOutContent">&lt;</button>
+        <div id="slideOutContent" role="complementary" aria-label="Панель быстрого доступа">
+          <h4>Текущие мины</h4>
+          <div id="slideOutMineList" class="slide-out-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно: Настройки карты/приложения -->
+  <div id="mapSettingsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-content">
+      <button id="closeModalBtn" class="close" aria-label="Закрыть">&times;</button>
+      <div class="modal-scroll">
+        <h2 id="modalTitle">Настройки</h2>
+
+        <div class="app-settings-layout">
+          <nav class="app-settings-menu" aria-label="Разделы настроек">
+            <button type="button" class="button justify-start as-menu-btn active" data-pane="paneMapSource">
+              <img src="icons/map.svg" alt="" class="icon" aria-hidden="true">
+              <span>Источник карты</span>
+            </button>
+            <button type="button" class="button justify-start as-menu-btn" data-pane="paneElevations">
+              <img src="icons/hgt.svg" alt="" class="icon" aria-hidden="true">
+              <span>Высоты</span>
+            </button>
+            <button type="button" class="button justify-start as-menu-btn" data-pane="paneData">
+              <img src="icons/save.svg" alt="" class="icon" aria-hidden="true">
+              <span>Сохранение данных</span>
+            </button>
+            <button type="button" class="button justify-start as-menu-btn" data-pane="paneDisplay">
+              <img src="icons/eye.svg" alt="" class="icon" aria-hidden="true">
+              <span>Отображение</span>
+            </button>
+          </nav>
+
+          <form id="mapSettingsForm" class="app-settings-content">
+            <!-- Источник базовго слоя -->
+            <section id="paneMapSource">
+              <div class="form-group" id="mapSourceBlock">
+                <label class="checkbox-row"><input type="radio" name="mapSource" value="osm" checked /> OpenStreetMap</label>
+                <label class="checkbox-row"><input type="radio" name="mapSource" value="opentopo" /> OpenTopoMap</label>
+                <label class="checkbox-row"><input type="radio" name="mapSource" value="google-hybrid" /> Google гибрид</label>
+                <label class="checkbox-row"><input type="radio" name="mapSource" value="google-sat" /> Google спутник</label>
+                <label class="checkbox-row"><input type="radio" name="mapSource" value="mbtiles" /> Офлайн: MBTiles</label>
+                <input id="mbtilesInput" type="file" accept=".mbtiles" hidden />
+              </div>
+            </section>
+
+            <!-- Загрузка офлайн-данных высот -->
+            <section id="paneElevations" hidden>
+              <div class="form-group">
+                <label for="hgtArchiveInputModal">Загрузить оффлайн-высоты (ZIP с .hgt)</label>
+                <input type="file" id="hgtArchiveInputModal" accept=".zip">
+              </div>
+            </section>
+
+            <!-- Импорт/экспорт данных приложения -->
+            <section id="paneData" hidden>
+              <div class="form-group">
+                <div id="dataStats"></div>
+                <div id="dataButtonsGrid">
+                  <button id="exportDataBtn" type="button" class="button full-width justify-start">
+                    <img src="icons/save.svg" alt="" class="icon" aria-hidden="true">
+                    <span>Скачать данные</span>
+                  </button>
+                  <button id="importDataBtn" type="button" class="button full-width justify-start">
+                    <img src="icons/dwl.svg" alt="" class="icon" aria-hidden="true">
+                    <span>Загрузить данные</span>
+                  </button>
+                  <button id="clearMapBtn" type="button" class="button button-danger-light full-width justify-start">
+                    <img src="icons/delete.svg" class="icon" alt="" aria-hidden="true">
+                    <span>Очистить карту</span>
+                  </button>
+                </div>
+                <label class="checkbox-row">
+                  <input type="checkbox" id="cacheEnabledCheckbox" />
+                  Сохранять данные в кэше
+                </label>
+                <input id="importDataInput" type="file" accept="application/json,.json" hidden />
+                <div id="dataError"></div>
+              </div>
+            </section>
+
+            <!-- Опции отображения интерфейса -->
+            <section id="paneDisplay" hidden>
+              <div class="form-group">
+                <label class="checkbox-row"><input type="checkbox" id="chkZoomControls" checked> Кнопки зума</label>
+                <label class="checkbox-row"><input type="checkbox" id="chkSearchControl" checked> Кнопка поиска</label>
+                <label class="checkbox-row"><input type="checkbox" id="chkLocateControl" checked> Кнопка «Найти меня»</label>
+                <label class="checkbox-row"><input type="checkbox" id="chkClearControl" checked> Кнопка «Очистить карту»</label>
+                <label class="checkbox-row"><input type="checkbox" id="chkSlideOutPanel" checked> Панель быстрого доступа</label>
+              </div>
+            </section>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно: Узлы -->
+  <div id="nodeSettingsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitleNodes">
+    <div class="modal-content">
+      <button id="closeNodeModalBtn" class="close" aria-label="Закрыть окно">&times;</button>
+      <h2 id="modalTitleNodes">Управление узлами</h2>
+      <div class="settings-container">
+        <div class="settings-list-panel">
+          <div class="list-controls">
+            <div class="search-input-wrapper">
+              <img src="icons/search.svg" class="icon" alt="" aria-hidden="true">
+              <input type="search" id="nodeSearchInput" placeholder="Поиск по названию...">
+            </div>
+            <button id="addNewNodeFromModalBtn" class="button full-width">
+              <span aria-hidden="true">&#43;</span> Добавить узел
+            </button>
+          </div>
+          <div id="nodeListContainer" class="list-container"></div>
+        </div>
+        <div id="nodeEditorPanel" class="settings-editor-panel">
+          <div class="placeholder">Выберите узел из списка для редактирования</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно: Мины -->
+  <div id="minesSettingsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitleMines">
+    <div class="modal-content">
+      <button id="closeMinesModalBtn" class="close" aria-label="Закрыть окно">&times;</button>
+      <h2 id="modalTitleMines">Управление минами</h2>
+      <div class="settings-container">
+        <div class="settings-list-panel">
+          <div class="list-controls">
+            <div class="search-input-wrapper">
+              <img src="icons/search.svg" class="icon" alt="" aria-hidden="true">
+              <input type="search" id="mineSearchInput" placeholder="Поиск...">
+            </div>
+            <button id="addNewMineFromModalBtn" class="button full-width">
+              <span aria-hidden="true">&#43;</span> Добавить мину
+            </button>
+          </div>
+          <div id="mineListContainer" class="list-container"></div>
+        </div>
+        <div id="mineEditorPanel" class="settings-editor-panel">
+          <div class="placeholder">Выберите мину из списка для редактирования</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно: Датчики -->
+  <div id="sensorsModal" class="modal" role="dialog" aria-modal="true"></div>
+
+  <!-- Модальное окно: Поиск -->
+  <div id="searchModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="searchModalTitle">
+    <div class="modal-content">
+      <button id="closeSearchModalBtn" class="close" aria-label="Закрыть окно">&times;</button>
+      <div class="modal-scroll">
+        <h2 id="searchModalTitle">Поиск</h2>
+        <div class="tabs" role="tablist" aria-label="Вкладки поиска">
+          <button class="tab active" data-tab="tabCoords" role="tab" aria-selected="true">По координатам</button>
+          <button class="tab" data-tab="tabAddress" role="tab" aria-selected="false">По адресу</button>
+        </div>
+
+        <!-- Поиск по координатам -->
+        <div id="tabCoords" class="tabpane" role="tabpanel">
+          <div class="search-row">
+            <label for="latInput" class="search-label">Широта</label>
+            <input id="latInput" class="coord-input" type="number" step="0.000001" min="-90" max="90" placeholder="59.934300" />
+            <label for="lngInput" class="search-label">Долгота</label>
+            <input id="lngInput" class="coord-input" type="number" step="0.000001" min="-180" max="180" placeholder="30.335100" />
+            <button id="btnGoCoords" class="button search-btn" type="button">Перейти</button>
+          </div>
+        </div>
+
+        <!-- Поиск по адресу -->
+        <div id="tabAddress" class="tabpane" role="tabpanel" hidden>
+          <div class="search-row">
+            <label for="searchInput" class="search-label">Адрес/объект</label>
+            <input id="searchInput" class="addr-input" type="text" placeholder="Например: Невский проспект 1" />
+            <button id="btnSearch" class="button search-btn" type="button">Найти</button>
+          </div>
+          <div id="searchResults" class="search-results"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно: Настройки устройства -->
+  <div id="serialModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="serialModalTitle">
+    <div class="modal-content">
+      <button id="closeSerialModalBtn" class="close" aria-label="Закрыть окно">&times;</button>
+      <div class="modal-scroll">
+        <h2 id="serialModalTitle">Терминал</h2>
+        <div id="serialTerminalBlock">
+          <div id="terminalView">
+            <div id="serialTerminal" class="serial-log"></div>
+            <form id="serialForm" autocomplete="off">
+              <input id="serialInput" type="text" placeholder="Введите команду." autocomplete="off" />
+              <button type="submit">Отправить</button>
+            </form>
+          </div>
+
+          <!-- Блок настроек приёмопередатчика -->
+          <div id="transceiverSettingsBlock" hidden>
+            <div class="settings-grid">
+              <label for="groupNumber">Номер группы:</label>
+              <input type="number" id="groupNumber" />
+
+              <label for="nodeNumber">Номер узла:</label>
+              <input type="number" id="nodeNumber" />
+
+              <label for="spreadFactor">Коэффициент расширения спектра (SF):</label>
+              <input type="number" id="spreadFactor" />
+
+              <label for="freqMHz">Частота, МГц:</label>
+              <input type="number" id="freqMHz" step="0.01" />
+
+              <label for="txPowerW">Выходная мощность, dBm:</label>
+              <input type="number" id="txPowerW" step="1" />
+
+              <label for="relayEnabled">Ретрансляция:</label>
+              <label class="checkbox-row"><input type="checkbox" id="relayEnabled" /> Включена</label>
+            </div>
+          </div>
+
+          <div id="serialActionsContainer">
+            <button id="serialConnectBtn" class="button connect" title="Подключить">Подключить</button>
+            <button id="transceiverSettingsBtn" class="button secondary">Настройки приёмопередатчика</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Скрипты -->
+  <script src="libs/Leaflet/leaflet.js"></script>
+  <script src="libs/proj4.js"></script>
+  <script src="map.js?v=6"></script>
+  <script src="nodes.js"></script>
+  <script src="zone.js"></script>
+  <script src="mines.js"></script>
+  <script src="serial-terminal.js"></script>
+  <script src="libs/sql-wasm.js"></script>
+
+  <script>
+    // Переопределение пути для sql-wasm.wasm (подгрузка из /libs)
+    (function() {
+      if (typeof window.initSqlJs === 'function') {
+        const __init = window.initSqlJs;
+        window.initSqlJs = function(options) {
+          options = options || {};
+          if (!options.locateFile) {
+            options.locateFile = function(file) { return 'libs/' + file; };
+          }
+          return __init(options);
+        };
+      }
+    })();
+
+    // Короткие помощники для sessionStorage
+    function ssGet(key, defVal) {
+      try { const v = sessionStorage.getItem(key); return v === null ? defVal : v; } catch { return defVal; }
+    }
+    function ssSet(key, val) {
+      try { sessionStorage.setItem(key, val); } catch {}
+    }
+
+    // Включение/выключение localStorage на уровне приложения
+    (function LS_GATE(){
+      const PREF_KEY = 'APP_LS_ENABLED';
+      const bak = {
+        active: false,
+        getItem:  window.localStorage?.getItem?.bind(window.localStorage),
+        setItem:  window.localStorage?.setItem?.bind(window.localStorage),
+        removeItem: window.localStorage?.removeItem?.bind(window.localStorage),
+        clear:    window.localStorage?.clear?.bind(window.localStorage)
+      };
+      function enableLS(){
+        if (!bak.active) return;
+        if (bak.getItem)    window.localStorage.getItem    = bak.getItem;
+        if (bak.setItem)    window.localStorage.setItem    = bak.setItem;
+        if (bak.removeItem) window.localStorage.removeItem = bak.removeItem;
+        if (bak.clear)      window.localStorage.clear      = bak.clear;
+        bak.active = false;
+      }
+      function disableLS(){
+        if (bak.active) return;
+        window.localStorage.getItem    = () => null;
+        window.localStorage.setItem    = () => {};
+        window.localStorage.removeItem = () => {};
+        window.localStorage.clear      = () => {};
+        bak.active = true;
+      }
+      window.setLocalStorageEnabled = function(on){
+        if (on) enableLS(); else disableLS();
+        ssSet(PREF_KEY, on ? '1' : '0');
+        const stats = document.getElementById('dataStats');
+        if (stats) stats.textContent = getCountsText();
+      };
+      window.isLocalStorageEnabled = () => !bak.active;
+      let initial = ssGet(PREF_KEY, '1') !== '0';
+      if (!initial) disableLS();
+    })();
+
+    // Быстрые селекторы/контроллеры модальных окон
+    const $ = (id) => document.getElementById(id);
+    const open  = (id) => $(id)?.classList.add('show');
+    const close = (id) => $(id)?.classList.remove('show');
+
+    // Основные кнопки боковой панели
+    $('deviceSettingsBtn')?.addEventListener('click', () => open('serialModal'));
+    $('mapSettingsBtn')?.addEventListener('click', () => open('mapSettingsModal'));
+    $('closeModalBtn')?.addEventListener('click', () => close('mapSettingsModal'));
+    $('closeNodeModalBtn')?.addEventListener('click', () => {
+      close('nodeSettingsModal');
+      if (typeof selectedNodeId !== 'undefined') selectedNodeId = null;
+    });
+    $('closeMinesModalBtn')?.addEventListener('click', () => {
+      close('minesSettingsModal');
+      if (typeof selectedMineId !== 'undefined') selectedMineId = null;
+    });
+    $('closeSearchModalBtn')?.addEventListener('click', () => close('searchModal'));
+    $('closeSerialModalBtn')?.addEventListener('click', () => close('serialModal'));
+
+    // Ключи для хранения данных
+    const APP_LS_KEY_NODES = window.LS_KEY_NODES || 'RFNodes.v1.nodes';
+    const APP_LS_KEY_MINES = window.LS_KEY_MINES || 'RFMines.v1.mines';
+    const APP_LS_KEY_SENSORS = window.LS_KEY_SENSORS || 'RFSensors.v1.sensors';
+
+    // Текстовая сводка по количеству объектов
+    function getCountsText() {
+      let nodes = 0, mines = 0, sensors = 0;
+      try {
+        const nr = localStorage.getItem(APP_LS_KEY_NODES);
+        const mr = localStorage.getItem(APP_LS_KEY_MINES);
+        const sr = localStorage.getItem(APP_LS_KEY_SENSORS);
+        if (nr) { const d = JSON.parse(nr); nodes = Array.isArray(d?.nodes) ? d.nodes.length : 0; }
+        if (mr) { const d = JSON.parse(mr); mines = Array.isArray(d?.mines) ? d.mines.length : 0; }
+        if (sr) { const d = JSON.parse(sr); sensors = Array.isArray(d?.sensors) ? d.sensors.length : 0; }
+      } catch {}
+      return `Текущее состояние: узлов — ${nodes}, мин — ${mines}, датчиков — ${sensors}.`;
+    }
+
+    // Экспорт данных приложения в JSON
+    function exportAppData() {
+      const now = new Date();
+      const pad = (n) => String(n).padStart(2,'0');
+      const fname = `Loctar ${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}.${pad(now.getMinutes())}.${pad(now.getSeconds())}.json`;
+      let nodesArr = [], minesArr = [];
+      try {
+        const nr = localStorage.getItem(APP_LS_KEY_NODES);
+        if (nr) { const d = JSON.parse(nr); if (Array.isArray(d?.nodes)) nodesArr = d.nodes; }
+      } catch {}
+      try {
+        const mr = localStorage.getItem(APP_LS_KEY_MINES);
+        if (mr) { const d = JSON.parse(mr); if (Array.isArray(d?.mines)) minesArr = d.mines; }
+      } catch {}
+      const payload = { version: 1, exportedAt: now.toISOString(), nodes: nodesArr, mines: minesArr };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = fname;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+    }
+
+    // Импорт данных из файла JSON
+    function importAppDataFromFile(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const data = JSON.parse(reader.result || '{}');
+          if (!data || !Array.isArray(data.nodes) || !Array.isArray(data.mines)) {
+            throw new Error('Файл не содержит массивы nodes/mines.');
+          }
+          if (!confirm('Импорт заменит текущие узлы и мины. Продолжить?')) return;
+          localStorage.setItem(APP_LS_KEY_NODES, JSON.stringify({ nodes: data.nodes }));
+          localStorage.setItem(APP_LS_KEY_MINES, JSON.stringify({ mines: data.mines }));
+          location.reload();
+        } catch (e) {
+          const err = $('dataError'); if (err) err.textContent = 'Ошибка импорта: ' + (e?.message || e);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // Очистка текущих данных карты
+    function clearMapData() {
+      if (!confirm('Очистить все узлы и мины на карте и в кэше?')) return;
+      try { localStorage.removeItem(APP_LS_KEY_NODES); } catch {}
+      try { localStorage.removeItem(APP_LS_KEY_MINES); } catch {}
+      location.reload();
+    }
+
+    // Переключатель вкладок в модале настроек
+    (function wireAppSettingsMenu(){
+      const btns = Array.from(document.querySelectorAll('.app-settings-menu .as-menu-btn'));
+      const panes = {
+        paneMapSource: $('paneMapSource'),
+        paneElevations: $('paneElevations'),
+        paneData: $('paneData'),
+        paneDisplay: $('paneDisplay')
+      };
+      const showPane = (target) => {
+        Object.keys(panes).forEach(k => { panes[k]?.toggleAttribute('hidden', k !== target); });
+        if (target === 'paneData') {
+          $('dataStats').textContent = getCountsText();
+          $('dataError').textContent = '';
+          $('cacheEnabledCheckbox').checked = window.isLocalStorageEnabled();
+        }
+      };
+      btns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          btns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          showPane(btn.dataset.pane);
+        });
+      });
+    })();
+
+    // Кнопки импорта/экспорта и кэша
+    $('exportDataBtn')?.addEventListener('click', exportAppData);
+    $('importDataBtn')?.addEventListener('click', () => $('importDataInput')?.click());
+    $('importDataInput')?.addEventListener('change', (e) => {
+      const f = e.target.files?.[0];
+      if (f) importAppDataFromFile(f);
+      e.target.value = '';
+    });
+    $('cacheEnabledCheckbox')?.addEventListener('change', (e) => {
+      const on = !!e.target.checked;
+      if (!on && !confirm('Отключить кэш? Данные больше не будут сохраняться до повторного включения.')) {
+        e.target.checked = true;
+        return;
+      }
+      window.setLocalStorageEnabled(on);
+    });
+    $('clearMapBtn')?.addEventListener('click', clearMapData);
+
+    // Инициализация после загрузки
+    window.addEventListener('load', () => {
+      $('cacheEnabledCheckbox').checked = window.isLocalStorageEnabled();
+      window.initNodesManager?.();
+      window.initMinesManager?.();
+
+      $('nodeSettingsBtn')?.addEventListener('click', () => {
+        updateNodeList();
+        open('nodeSettingsModal');
+      });
+
+      $('minesSettingsBtn')?.addEventListener('click', () => {
+        updateMineList();
+        open('minesSettingsModal');
+      });
+
+      // Синхронизация позиций объектов с картой
+      window.map?.on?.('move zoom resize', () => {
+        window.nodesManager?.updatePositions?.();
+        window.minesManager?.updatePositions?.();
+      });
+
+      // Загрузка офлайн-высот
+      $('hgtArchiveInputModal')?.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        try {
+          await window.loadHgtArchive?.(file);
+          alert('Оффлайн-высоты успешно загружены.');
+        } catch (err) {
+          console.warn('[HGT] load failed', err);
+        } finally {
+          e.target.value = '';
+        }
+      });
+
+      // Переключатели отображения элементов интерфейса
+      (function wireDisplayToggles(){
+        const leafletPairs = [['chkZoomControls','zoom'],['chkSearchControl','search'],['chkLocateControl','locate'],['chkClearControl','clear']];
+        function bindLeaflet(id, key){
+          const el = document.getElementById(id);
+          if (!el) return;
+          const apply = () => {
+            if (typeof window.setControlVisible === 'function') {
+              try { window.setControlVisible(key, !!el.checked); } catch(e){}
+            }
+          };
+          apply();
+          el.addEventListener('change', apply);
+        }
+        leafletPairs.forEach(([id, key]) => bindLeaflet(id, key));
+
+        const otherPairs = [['chkSlideOutPanel', 'slideOutToggle']];
+        function bindOther(checkboxId, elementId) {
+          const checkbox = document.getElementById(checkboxId);
+          const element = document.getElementById(elementId);
+          if (!checkbox || !element) return;
+          const apply = () => { element.style.display = checkbox.checked ? '' : 'none'; };
+          apply();
+          checkbox.addEventListener('change', apply);
+        }
+        otherPairs.forEach(([cbId, elId]) => bindOther(cbId, elId));
+      })();
+    });
+  </script>
+</body>
+</html>
