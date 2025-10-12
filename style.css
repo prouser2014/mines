@@ -772,6 +772,14 @@ input:focus, select:focus, input[type="search"]:focus {
 }
 .slide-out-action-btn:hover { background-color: var(--c-sidebar); border-color: var(--c-border); }
 .slide-out-action-btn img { width: 100%; height: 100%; }
+.slide-out-action-btn .payload-icon {
+  display: block;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.payload-icon--armed { filter: invert(48%) sepia(91%) saturate(545%) hue-rotate(86deg) brightness(90%) contrast(90%); }
+.payload-icon--disarmed { filter: invert(22%) sepia(86%) saturate(5339%) hue-rotate(353deg) brightness(93%) contrast(109%); }
 
 #slideOutContainer.open #slideOutContent { transform: translateX(0); }
 #slideOutContainer.open #slideOutToggle { right: 15.625rem; }
@@ -902,6 +910,57 @@ input[type="file"]::file-selector-button:hover {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
+}
+
+#fileSaveBlock {
+  background-color: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  box-shadow: var(--shadow-sm);
+}
+
+#fileSaveBlock .fs-instructions {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--c-text-secondary);
+}
+
+#fileSaveBlock .fs-instructions strong {
+  color: var(--c-text-primary);
+}
+
+#fileSaveBlock .fs-steps {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  font-size: 0.9rem;
+  color: var(--c-text-secondary);
+}
+
+#fileSaveBlock .fs-status {
+  margin: 0;
+  margin-top: var(--spacing-sm);
+  font-size: 0.9rem;
+  transition: color var(--transition-fast);
+}
+
+#fileSaveBlock .fs-status.is-muted { color: var(--c-text-secondary); opacity: 0.8; }
+#fileSaveBlock .fs-status.is-active { color: var(--c-primary); }
+#fileSaveBlock .fs-status.is-success { color: var(--c-success); }
+#fileSaveBlock .fs-status.is-error { color: var(--c-danger); }
+
+kbd {
+  display: inline-block;
+  padding: 0.125rem 0.4rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--c-border);
+  background-color: var(--c-sidebar);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.85em;
+  line-height: 1.2;
 }
 
 /* ==========================================================================
