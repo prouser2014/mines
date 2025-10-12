@@ -176,7 +176,7 @@
         <span>Включить защиту входа PIN-кодом</span>
       </label>
 
-      <div class="form-grid-compact" style="margin-top:.5rem;">
+      <div class="form-grid-compact mt-sm">
         <label for="secNewPin">Новый PIN (4–8 цифр):</label>
         <div class="pin-input-wrap">
           <input id="secNewPin" class="sec-input" type="text" inputmode="numeric" maxlength="8" autocomplete="off" ${!lsOk?' disabled':''}>
@@ -358,7 +358,7 @@
     overlayEl.innerHTML=`
       <div class="security-top">
         <div class="brand-wrap"><img src="img/main.png" alt=""></div>
-        <input id="secPinInput" type="password" autocomplete="off" inputmode="none" style="position:absolute;opacity:0;width:0;height:0;border:0;padding:0">
+        <input id="secPinInput" class="visually-hidden-input" type="password" autocomplete="off" inputmode="none">
         <div class="security-title">Введите PIN</div>
         <div class="pin-dots" id="pinDots"></div>
         <div class="security-msg" id="secMsg"></div>
