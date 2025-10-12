@@ -182,9 +182,9 @@
           return;
         }
         box.innerHTML = data.map((it) => `
-          <div class="search-item" data-lat="${it.lat}" data-lon="${it.lon}" style="padding:6px 8px; border-bottom:1px solid #eee; cursor:pointer;">
-            <div style="font-weight:600;">${(it.display_name || "").replace(/</g, "&lt;")}</div>
-            <div style="font-size:12px; color:#666;">${it.type || ""} (${it.class || ""})</div>
+          <div class="search-item" data-lat="${it.lat}" data-lon="${it.lon}">
+            <div class="search-item-title">${(it.display_name || "").replace(/</g, "&lt;")}</div>
+            <div class="search-item-subtitle">${it.type || ""} (${it.class || ""})</div>
           </div>
         `).join("");
 
