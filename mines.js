@@ -29,9 +29,13 @@
   const BADGE_TEXT_Y = 14.2;
 
   // Цветовые фильтры
-  const ICON_FILTER_GREEN = 'invert(48%) sepia(91%) saturate(545%) hue-rotate(86deg) brightness(90%) contrast(90%)';
-  const ICON_FILTER_RED   = 'invert(22%) sepia(86%) saturate(5339%) hue-rotate(353deg) brightness(93%) contrast(109%)';
-  const MINE_FILTER_RED   = 'invert(13%) sepia(94%) saturate(7487%) hue-rotate(1deg) brightness(93%) contrast(112%)';
+  const MINE_ICON_STATE_CLASSES = [
+    'mine-icon--planned',
+    'mine-icon--set',
+    'mine-icon--armed',
+    'mine-icon--disarmed',
+    'mine-icon--exploded',
+  ];
 
   // Линия проводной связи
   const LINK_HIDE_DISTANCE_PX = 26;
@@ -54,13 +58,32 @@
     return `Мина №${mine.id}`;
   }
 
-  function getMineFilter(mine) {
-    if (mine.state === 'planned')   return 'filter:none;';
-    if (mine.state === 'set')       return 'filter:brightness(0) sepia(100%) saturate(2000%) hue-rotate(10deg) brightness(0.95);';
-    if (mine.state === 'armed')     return 'filter:brightness(0) sepia(100%) saturate(1000%) hue-rotate(120deg) brightness(0.9);';
-    if (mine.state === 'disarmed')  return 'filter:brightness(0) sepia(100%) saturate(1000%) hue-rotate(180deg) brightness(1.1);';
-    if (mine.state === 'exploded')  return `filter:${MINE_FILTER_RED};`;
-    return '';
+  function getMineIconStateClass(mine) {
+    switch (mine?.state) {
+      case 'planned':
+        return 'mine-icon--planned';
+      case 'set':
+        return 'mine-icon--set';
+      case 'armed':
+        return 'mine-icon--armed';
+      case 'disarmed':
+        return 'mine-icon--disarmed';
+      case 'exploded':
+        return 'mine-icon--exploded';
+      default:
+        return '';
+    }
+  }
+
+  function getPayloadIconStateClass(mine) {
+    switch (mine?.state) {
+      case 'armed':
+        return 'payload-icon--armed';
+      case 'disarmed':
+        return 'payload-icon--disarmed';
+      default:
+        return '';
+    }
   }
 
   function getMineHeaderStatus(m) {
@@ -286,6 +309,7 @@
       img.setAttribute("href", "icons/mine.svg");
       img.setAttribute("width", ICON_SIZE); img.setAttribute("height", ICON_SIZE);
       img.setAttribute("x", -ICON_HALF); img.setAttribute("y", -ICON_HALF);
+      try { img.classList.add('mine-icon-image'); } catch {}
       g.appendChild(img);
 
       const innerCircle = document.createElementNS(SVG_NS, "circle");
@@ -372,7 +396,14 @@
       // Иконка и фильтр состояния
       const href = getMineIconHref(mine);
       try { mine.img.setAttribute("href", href); } catch {}
-      try { mine.img.style.filter = getMineFilter(mine); } catch {}
+      try {
+        if (mine.img?.classList) {
+          mine.img.classList.add('mine-icon-image');
+          MINE_ICON_STATE_CLASSES.forEach((cls) => mine.img.classList.remove(cls));
+          const stateClass = getMineIconStateClass(mine);
+          if (stateClass) mine.img.classList.add(stateClass);
+        }
+      } catch {}
 
       // Цвет внутреннего круга и текста
       if (mine.state === 'exploded') {
@@ -663,24 +694,24 @@
 
     container.innerHTML = mines.map(m => {
       const iconHref = getMineIconHref(m);
-      const filter = getMineFilter(m);
+      const iconStateClass = getMineIconStateClass(m);
       const isRadio = iconHref.includes('radio');
       const isExploded = m.state === 'exploded';
 
       let payloadIcon = 'no.svg';
-      let payloadFilter = '';
+      let payloadStateClass = getPayloadIconStateClass(m);
       if (m.state === 'armed') {
         payloadIcon = 'yes.svg';
-        payloadFilter = `filter: ${ICON_FILTER_GREEN};`;
       } else if (m.state === 'disarmed') {
         payloadIcon = 'no.svg';
-        payloadFilter = `filter: ${ICON_FILTER_RED};`;
+      } else {
+        payloadStateClass = '';
       }
 
       const actionsHtml = isExploded ? '' : `
         <div class="mine-item-actions">
           <button class="slide-out-action-btn" data-action="check" data-mine-id="${m.id}" title="Проверить нагрузку">
-            <img src="icons/${payloadIcon}" style="${payloadFilter}" alt="Нагрузка">
+            <img src="icons/${payloadIcon}" class="${['payload-icon', payloadStateClass].filter(Boolean).join(' ')}" alt="Нагрузка">
           </button>
           <button class="slide-out-action-btn" data-action="explode" data-mine-id="${m.id}" title="Взорвать">
             <img src="icons/fire.svg" alt="Взорвать">
@@ -692,7 +723,7 @@
         <div class="slide-out-mine-item ${isRadio ? 'is-radio' : ''} ${isExploded ? 'is-exploded' : ''}">
           <div class="mine-item-main-info" data-mine-id="${m.id}" title="Показать на карте">
             <div class="mine-icon-wrapper">
-              <img src="${iconHref}" style="${filter}">
+              <img src="${iconHref}" class="${['mine-icon-image', iconStateClass].filter(Boolean).join(' ')}" alt="">
               <div class="mine-id-text-overlay">${m.id}</div>
             </div>
             <span>${getMineDisplayName(m)}</span>
