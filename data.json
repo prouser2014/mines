@@ -1,0 +1,114 @@
+{
+  "version": 1,
+  "savedAt": "2025-10-11T10:52:10.211Z",
+  "nodes": [
+    {
+      "id": 1,
+      "latlng": {
+        "lat": 48.77915707462206,
+        "lng": 44.66732025146485
+      },
+      "name": "339",
+      "type": "lamp1",
+      "channel": null,
+      "visible": true,
+      "lora": {
+        "freqHz": 434000000,
+        "txPowerDbm": 30,
+        "txAntGainDb": 0,
+        "rxAntGainDb": 0,
+        "rxSensDbm": -123,
+        "txH": 10,
+        "rxH": 1.5,
+        "radius": 20000
+      },
+      "elevation": 0
+    }
+  ],
+  "mines": [
+    {
+      "id": 1,
+      "latlng": {
+        "lat": 48.7750280797704,
+        "lng": 44.65504646563205
+      },
+      "assignedNodeId": 1,
+      "channel": 3,
+      "state": "planned",
+      "explodedAt": "2025-09-20T16:40:23.747Z",
+      "reinitFailed": true
+    },
+    {
+      "id": 3,
+      "latlng": {
+        "lat": 48.78209806949521,
+        "lng": 44.68281269073487
+      },
+      "assignedNodeId": null,
+      "channel": null,
+      "state": "planned",
+      "explodedAt": null,
+      "reinitFailed": false
+    },
+    {
+      "id": 5,
+      "latlng": {
+        "lat": 48.780062014608326,
+        "lng": 44.68379974365235
+      },
+      "assignedNodeId": null,
+      "channel": null,
+      "state": "planned",
+      "explodedAt": null,
+      "reinitFailed": false
+    },
+    {
+      "id": 7,
+      "latlng": {
+        "lat": 48.78170217631848,
+        "lng": 44.68440055847169
+      },
+      "assignedNodeId": null,
+      "channel": null,
+      "state": "planned",
+      "explodedAt": null,
+      "reinitFailed": false
+    },
+    {
+      "id": 8,
+      "latlng": {
+        "lat": 48.78255051544779,
+        "lng": 44.67547416687012
+      },
+      "assignedNodeId": null,
+      "channel": null,
+      "state": "planned",
+      "explodedAt": null,
+      "reinitFailed": false
+    },
+    {
+      "id": 9,
+      "latlng": {
+        "lat": 48.778648038710166,
+        "lng": 44.683713912963874
+      },
+      "assignedNodeId": null,
+      "channel": null,
+      "state": "planned",
+      "explodedAt": null,
+      "reinitFailed": false
+    },
+    {
+      "id": 10,
+      "latlng": {
+        "lat": 48.775424024724984,
+        "lng": 44.675302505493164
+      },
+      "assignedNodeId": null,
+      "channel": null,
+      "state": "planned",
+      "explodedAt": null,
+      "reinitFailed": false
+    }
+  ]
+}
