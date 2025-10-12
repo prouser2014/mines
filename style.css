@@ -254,6 +254,9 @@ html, body {
   overflow-y: auto;
   padding-right: var(--spacing-sm);
   scrollbar-gutter: stable;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
 }
 .modal-content h2 {
   margin: 0;
@@ -727,17 +730,10 @@ input:focus, select:focus, input[type="search"]:focus {
   width: 2.5rem; height: 2.5rem;
   flex-shrink: 0;
 }
-.mine-icon-wrapper img,
-.mine-icon-image {
+.mine-icon-wrapper img {
   width: 100%;
   height: 100%;
 }
-
-.mine-icon--planned { filter: none; }
-.mine-icon--set { filter: brightness(0) sepia(100%) saturate(2000%) hue-rotate(10deg) brightness(0.95); }
-.mine-icon--armed { filter: brightness(0) sepia(100%) saturate(1000%) hue-rotate(120deg) brightness(0.9); }
-.mine-icon--disarmed { filter: brightness(0) sepia(100%) saturate(1000%) hue-rotate(180deg) brightness(1.1); }
-.mine-icon--exploded { filter: invert(13%) sepia(94%) saturate(7487%) hue-rotate(1deg) brightness(93%) contrast(112%); }
 
 .mine-id-text-overlay {
   position: absolute;
@@ -813,22 +809,37 @@ input:focus, select:focus, input[type="search"]:focus {
 
 .app-settings-layout {
   display: grid;
-  grid-template-columns: 13.75rem 1fr;
+  grid-template-columns: 14rem minmax(0, 1fr);
   gap: var(--spacing-lg);
   margin-top: var(--spacing-md);
+  align-items: flex-start;
 }
 
-.app-settings-menu { display: flex; flex-direction: column; gap: var(--spacing-xs); }
+.app-settings-menu {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  background-color: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm);
+  box-shadow: var(--shadow-sm);
+}
 
 .as-menu-btn {
   --btn-bg: transparent;
   --btn-color: var(--c-text-secondary);
+  width: 100%;
+  justify-content: flex-start;
   background-color: var(--btn-bg);
   color: var(--btn-color);
   border: none;
   box-shadow: none;
   font-size: 1em;
-  font-weight: normal;
+  font-weight: 500;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-sm);
+  transition: background-color var(--transition-fast), color var(--transition-fast);
 }
 .as-menu-btn .icon { filter: none; opacity: 0.7; }
 .as-menu-btn:hover {
@@ -836,7 +847,7 @@ input:focus, select:focus, input[type="search"]:focus {
   --btn-color: var(--c-text-primary);
 }
 .as-menu-btn.active {
-  --btn-bg: color-mix(in srgb, var(--c-primary) 10%, transparent);
+  --btn-bg: color-mix(in srgb, var(--c-primary) 12%, transparent);
   --btn-color: var(--c-primary);
   font-weight: 600;
 }
@@ -845,10 +856,21 @@ input:focus, select:focus, input[type="search"]:focus {
   filter: invert(39%) sepia(57%) saturate(2878%) hue-rotate(206deg) brightness(100%) contrast(100%);
 }
 
+.app-settings-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
 .app-settings-content section {
   padding: var(--spacing-lg);
-  background-color: var(--c-bg);
+  background-color: var(--c-surface);
+  border: 1px solid var(--c-border);
   border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
 }
 .app-settings-content .form-group {
   display: flex;
@@ -856,14 +878,15 @@ input:focus, select:focus, input[type="search"]:focus {
   gap: var(--spacing-sm);
 }
 .app-settings-content .checkbox-row {
-  background-color: var(--c-surface);
+  background-color: color-mix(in srgb, var(--c-sidebar) 30%, var(--c-surface));
   padding: var(--spacing-sm) var(--spacing-md);
-  border: none;
+  border: 1px solid var(--c-border);
   border-radius: var(--radius-sm);
   transition: background-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 .app-settings-content .checkbox-row:has(input:checked) {
-  background-color: color-mix(in srgb, var(--c-primary) 10%, transparent);
+  background-color: color-mix(in srgb, var(--c-primary) 10%, var(--c-surface));
+  border-color: color-mix(in srgb, var(--c-primary) 50%, var(--c-border));
   box-shadow: 0 0 0 0.125rem color-mix(in srgb, var(--c-primary) 20%, transparent);
 }
 
